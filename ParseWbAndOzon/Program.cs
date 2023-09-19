@@ -13,6 +13,7 @@ class Program
     public static void Main()
     {
         FirefoxOptions options = new FirefoxOptions();
+        options.AddArgument("--headless");
         var driver = new FirefoxDriver(options);
         IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
         try
@@ -26,10 +27,9 @@ class Program
             {
                 js.ExecuteScript($"window.scrollBy(0,{y.ToString()})");
                 y += 50;
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
             }
-
-            Thread.Sleep(2000);
+            
 
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
             var price = driver.FindElements(By.TagName("article"));
@@ -38,7 +38,7 @@ class Program
             Console.WriteLine(price.Count);
             foreach (var webElement in price)
             {
-                Console.WriteLine(webElement.Text);
+                Console.WriteLine(webElement.ToString());
             }
 
             IWebElement button = driver.FindElement(By.LinkText("Следующая страница"));
