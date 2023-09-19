@@ -12,6 +12,8 @@ class Program
 {
     public static void Main()
     {
+        ReadOnlyCollection<IWebElement> fixedPrice = null;
+        int pageNumbers = 1;
         FirefoxOptions options = new FirefoxOptions();
         var driver = new FirefoxDriver(options);
         IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
@@ -21,34 +23,57 @@ class Program
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
 
             driver.Manage().Window.Maximize();
-            int y = 50;
-            for (int timer = 0; timer < 19; timer++)
+            for (int i = 1; i <= pageNumbers; i++)
             {
-                js.ExecuteScript($"window.scrollBy(0,{y.ToString()})");
-                y += 50;
-                Thread.Sleep(1000);
-            }
+                Thread.Sleep(5000); //На случай, если плохой интернет и страница долго грузится
+                int y = 50;
+                for (int timer = 0; timer < 19; timer++)
+                {
+                    js.ExecuteScript($"window.scrollBy(0,{y.ToString()})");
+                    y += 50;
+                    Thread.Sleep(1000);
+                }
 
-            Thread.Sleep(2000);
+                Thread.Sleep(2000);
 
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
-            var price = driver.FindElements(By.TagName("article"));
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+                var price = driver.FindElements(By.TagName("article"));
 
-            Console.Clear();
-            Console.WriteLine(price.Count);
-            foreach (var webElement in price)
-            {
-                Console.WriteLine(webElement.Text);
-            }
+                Console.Clear();
+                if (price.Count > 100)
+                {
+                    fixedPrice = RemoveElem(price);
+                }
 
-            IWebElement button = driver.FindElement(By.LinkText("Следующая страница"));
-            button.Click();
+                Console.WriteLine(fixedPrice.Count + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                foreach (var webElement in fixedPrice)
+                {
+                    Console.WriteLine(webElement.Text);
+                }
+
+                // IWebElement button = driver.FindElement(By.LinkText("Следующая страница"));
+                // button.Click();
             
-            Thread.Sleep(10000);
+                Thread.Sleep(5000);
+
+                
+            }
+            
         }
         finally
         {
             driver.Quit();
         }
+    }
+
+    public static ReadOnlyCollection<IWebElement> RemoveElem(ReadOnlyCollection<IWebElement> price)
+    {
+        List<IWebElement> list = price.ToList();
+        int listLenght = list.Count;
+        for (int i = listLenght - 1; i > 99; i--)
+        {
+            list.Remove(list[i]);
+        }
+        return new ReadOnlyCollection<IWebElement>(list);
     }
 }
