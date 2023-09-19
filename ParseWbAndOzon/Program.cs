@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
@@ -39,6 +40,11 @@ class Program
             {
                 Console.WriteLine(webElement.Text);
             }
+
+            IWebElement button = driver.FindElement(By.LinkText("Следующая страница"));
+            button.Click();
+            
+            Thread.Sleep(10000);
         }
         finally
         {
