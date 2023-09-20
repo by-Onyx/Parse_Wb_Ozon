@@ -14,6 +14,7 @@ class Program
     {
         ReadOnlyCollection<IWebElement> fixedPrice = null;
         FirefoxOptions options = new FirefoxOptions();
+        options.AddArgument("--headless");
         var driver = new FirefoxDriver(options);
         IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
         try
