@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
@@ -12,7 +13,6 @@ class Program
 {
     public static void Main()
     {
-        ReadOnlyCollection<IWebElement> fixedPrice = null;
         FirefoxOptions options = new FirefoxOptions();
         options.AddArgument("--headless");
         var driver = new FirefoxDriver(options);
@@ -26,27 +26,26 @@ class Program
             while (true)
             {
                 driver.Manage().Window.Maximize();
-                int y = 50;
-                for (int timer = 0; timer < 20; timer++)
+
+                double speed = 0.3;
+                int pageHeight = Convert.ToInt32(js.ExecuteScript("return document.body.scrollHeight"));
+                double position = 0;
+                while (pageHeight - 100 > position)
                 {
-                    js.ExecuteScript($"window.scrollBy(0,{y.ToString()})");
-                    y += 50;
-                    Thread.Sleep(400);
+                    position += speed;
+                    js.ExecuteScript($"window.scrollBy(0,{position.ToString(CultureInfo.InvariantCulture)})");
                 }
 
+                Console.WriteLine("yep");
+                
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                var price = driver.FindElements(By.TagName("article"));
+                js.ExecuteScript("window.scrollTo(0,document.body.scrollHeight);");
+               
+                var catalog = driver.FindElement(By.CssSelector("#catalog > div > div.catalog-page__main.new-size"));
 
-                Console.Clear();
-                if (price.Count > 100)
-                {
-                    fixedPrice = RemoveElem(price);
-                    PrintInfo(fixedPrice);
-                }
-                else
-                {
-                    PrintInfo(price);
-                }
+                var productCards = catalog.FindElements(By.TagName("article"));
+                
+                PrintInfo(productCards);
 
                 try
                 {
@@ -63,18 +62,6 @@ class Program
         {
             driver.Quit();
         }
-    }
-
-    public static ReadOnlyCollection<IWebElement> RemoveElem(ReadOnlyCollection<IWebElement> price)
-    {
-        List<IWebElement> list = price.ToList();
-        int listLenght = list.Count;
-        for (int i = listLenght - 1; i > 99; i--)
-        {
-            list.Remove(list[i]);
-        }
-
-        return new ReadOnlyCollection<IWebElement>(list);
     }
 
     public static void PrintInfo(ReadOnlyCollection<IWebElement> price)
@@ -109,7 +96,6 @@ class Program
                         .Text,
                 Url = $"https://www.wildberries.ru/catalog/{id.Replace("c", "")}/detail.aspx"
             };
-            Console.WriteLine(count);
             Console.WriteLine(product.ToString());
             count++;
         }
