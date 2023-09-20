@@ -19,35 +19,45 @@ class Program
         IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
         try
         {
-            driver.Navigate().GoToUrl("https://www.wildberries.ru/catalog/0/search.aspx?search=msi");
+            driver.Navigate().GoToUrl("https://www.wildberries.ru/catalog/0/search.aspx?search=msi+материнская+плата");
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
             //Thread.Sleep(100000000);
             //Console.WriteLine(driver.FindElement(By.XPath("/html/body/div[1]/main/div[2]/div/div[2]/div/div/div[1]/div/span/span[1]")).Text);
-            driver.Manage().Window.Maximize();
-            int y = 75;
-            for (int timer = 0; timer < 16; timer++)
+            while (true)
             {
-                js.ExecuteScript($"window.scrollBy(0,{y.ToString()})");
-                y += 75;
-                Thread.Sleep(400);
-            }
+                driver.Manage().Window.Maximize();
+                int y = 50;
+                for (int timer = 0; timer < 20; timer++)
+                {
+                    js.ExecuteScript($"window.scrollBy(0,{y.ToString()})");
+                    y += 50;
+                    Thread.Sleep(400);
+                }
 
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            var price = driver.FindElements(By.TagName("article"));
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                var price = driver.FindElements(By.TagName("article"));
 
-            Console.Clear();
-            if (price.Count > 100)
-            {
-                fixedPrice = RemoveElem(price);
-                PrintInfo(fixedPrice);
+                Console.Clear();
+                if (price.Count > 100)
+                {
+                    fixedPrice = RemoveElem(price);
+                    PrintInfo(fixedPrice);
+                }
+                else
+                {
+                    PrintInfo(price);
+                }
+
+                try
+                {
+                    IWebElement button = driver.FindElement(By.LinkText("Следующая страница"));
+                    button.Click();
+                }
+                catch
+                {
+                    break;
+                }
             }
-            else
-            {
-                PrintInfo(price);
-            }
-            
-            IWebElement button = driver.FindElement(By.LinkText("Следующая страница"));
-            button.Click();
         }
         finally
         {
@@ -81,8 +91,7 @@ class Program
                 Price = webElement
                     .FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > p > span > del")).Text,
                 Brand =
-                    webElement.FindElement(By.CssSelector($"#{id
-                    } > div > div.product-card__middle-wrap > h2 > span.product-card__brand")).Text,
+                    webElement.FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > h2 > span.product-card__brand")).Text,
                 Name =
                     webElement.FindElement(
                             By.CssSelector(
