@@ -12,6 +12,6 @@ public record Product
 
     public override string ToString()
     {
-        return $"{Name};{Brand};{Price};{PriceWithSale};{Rating:F1};{AmountRewiew};{Url}";
+        return $"{Name.Replace("/ ", "")};{Brand};{Price};{PriceWithSale};{Rating};{AmountRewiew};{Url}";
     }
 }
