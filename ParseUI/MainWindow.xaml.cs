@@ -1,25 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using OpenQA.Selenium.Firefox;
+using ParseWbAndOzon;
+using ParseWbAndOzon.Parsers;
 
 namespace ParseUI
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
+        private string fileDir;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -32,11 +24,38 @@ namespace ParseUI
 
         private void submitBtn_Click(object sender, RoutedEventArgs e)
         {
+            ShowFolderDialog();
+            var driver = InitDriver();
             if ((bool)wildberriesCheck.IsChecked)
             {
+                WbParser wb = new WbParser(driver, txtSearch.Text.Replace(" ", "+"));
+                wb.Parse();
+                TextWorker<Product> textWorker = new TextWorker<Product>(wb.Products, fileDir);
+                textWorker.WriteToFile($"wb_{txtSearch.Text.Replace(" ", "_")}_{DateTime.Now.ToString("dd-MM-yyyy")}");
             }
             if ((bool)ozonCheck.IsChecked)
             {
+            }
+        }
+
+        private FirefoxDriver InitDriver()
+        {
+            FirefoxOptions options = new FirefoxOptions();
+            options.AddArgument("--headless");
+            var driver = new FirefoxDriver(options);
+
+            return driver;
+        }
+
+        private void ShowFolderDialog()
+        {
+            CommonOpenFileDialog folderDialog = new CommonOpenFileDialog();
+            folderDialog.IsFolderPicker = true;
+            folderDialog.Title = "Выберите папку для сохранения файла";
+
+            if (folderDialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                fileDir = folderDialog.FileName;
             }
         }
     }

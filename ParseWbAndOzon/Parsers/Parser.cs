@@ -7,12 +7,12 @@ namespace ParseWbAndOzon.Parsers;
 
 public abstract class Parser<T>
 {
-    public List<T> Products { get; set; }
+    public List<T> Products { get; private set; }
          
     protected readonly WebDriver _driver;
     protected readonly string _productName;
     
-    private const double speed = 0.5;
+    private const double scrollSpeed = 0.1;
 
     public Parser(WebDriver driver, string productName)
     {
@@ -30,12 +30,11 @@ public abstract class Parser<T>
     
     protected void ScrollToPageEnd()
     {
-        int pageHeight = Convert.ToInt32(_driver.ExecuteScript("return document.body.scrollHeight"));
-        double position = 0;
-        while (pageHeight - 200 > position)
+        double currentPosition = 0;
+        while (200 >= currentPosition)
         {
-            position += speed;
-            _driver.ExecuteScript($"window.scrollBy(0,{position.ToString(CultureInfo.InvariantCulture)})");
+            currentPosition += scrollSpeed;
+            _driver.ExecuteScript($"window.scrollBy(0,{currentPosition.ToString(CultureInfo.InvariantCulture)})");
         }
     }
 }

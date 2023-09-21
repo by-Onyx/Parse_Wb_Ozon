@@ -14,10 +14,12 @@ class Program
 {
     public static void Main()
     {
-        FirefoxOptions options = new FirefoxOptions();
-        //options.AddArgument("--headless");
+        /*FirefoxOptions options = new FirefoxOptions();
+        options.AddArgument("--headless");
         var driver = new FirefoxDriver(options);
         WbParser wb = new WbParser(driver, "msi+материнская+плата");
         wb.Parse();
+        TextWorker<Product> textWorker = new TextWorker<Product>(wb.Products);
+        textWorker.WriteToFile("we");*/
     }
 }

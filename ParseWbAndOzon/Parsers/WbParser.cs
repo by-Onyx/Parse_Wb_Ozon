@@ -56,6 +56,7 @@ public class WbParser : Parser<Product>
 
     protected override List<Product> ProductToModel(ReadOnlyCollection<IWebElement> elements)
     {
+        Console.WriteLine(elements.Count);
         List<Product> products = new();
         foreach (var element in elements)
         {
@@ -85,6 +86,7 @@ public class WbParser : Parser<Product>
                         .Text,
                 Url = $"https://www.wildberries.ru/catalog/{id.Replace("c", "")}/detail.aspx"
             };
+            products.Add(product);
         }
 
         return products;
