@@ -1,6 +1,8 @@
-﻿namespace ParseWbAndOzon;
+﻿using Microsoft.IdentityModel.Tokens;
 
-public record Product
+namespace ParseWbAndOzon;
+
+public record WbProduct
 {
     public required string Name { get; set; }
     public required string Brand { get; set; }
@@ -12,6 +14,12 @@ public record Product
 
     public override string ToString()
     {
-        return $"{Name.Replace("/ ", "")};{Brand};{Price};{PriceWithSale};{Rating.Replace('.', ',')};{AmountRewiew};{Url}";
+        return $"{Name.Replace("/ ", "")};" +
+               $"{Brand};" +
+               $"{Price};" +
+               $"{PriceWithSale};" +
+               $"{Rating.Replace('.', ',')};" +
+               $"{AmountRewiew};" +
+               $"=ГИПЕРССЫЛКА(\"{Url}\")";
     }
 }

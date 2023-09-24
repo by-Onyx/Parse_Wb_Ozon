@@ -30,7 +30,7 @@ namespace ParseUI
             {
                 WbParser wb = new WbParser(driver, txtSearch.Text.Replace(" ", "+"));
                 wb.Parse();
-                TextWorker<Product> textWorker = new TextWorker<Product>(wb.Products, fileDir);
+                TextWorker<WbProduct> textWorker = new TextWorker<WbProduct>(wb.Products, fileDir);
                 textWorker.WriteToFile($"wb_{txtSearch.Text.Replace(" ", "_")}_{DateTime.Now.ToString("dd-MM-yyyy")}");
             }
             if ((bool)ozonCheck.IsChecked)

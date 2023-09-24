@@ -3,7 +3,7 @@ using OpenQA.Selenium;
 
 namespace ParseWbAndOzon.Parsers;
 
-public class WbParser : Parser<Product>
+public class WbParser : Parser<WbProduct>
 {
     public WbParser(WebDriver driver, string productName) : base(driver, productName) { }
     
@@ -54,14 +54,14 @@ public class WbParser : Parser<Product>
         } while (CheckNextPage());
     }
 
-    protected override List<Product> ProductToModel(ReadOnlyCollection<IWebElement> elements)
+    protected override List<WbProduct> ProductToModel(ReadOnlyCollection<IWebElement> elements)
     {
         Console.WriteLine(elements.Count);
-        List<Product> products = new();
+        List<WbProduct> products = new();
         foreach (var element in elements)
         {
             var id = element.GetAttribute("id");
-            var product = new Product
+            var product = new WbProduct
             {
                 PriceWithSale = element
                     .FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > p > span > ins")).Text,
