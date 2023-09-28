@@ -9,7 +9,7 @@ public abstract class Parser<T>
 {
     public List<T> Products { get; private set; }
          
-    protected readonly WebDriver _driver;
+    protected WebDriver _driver;
     protected readonly string _productName;
     
     private const double scrollSpeed = 0.1;

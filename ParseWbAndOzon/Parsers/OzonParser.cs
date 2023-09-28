@@ -1,11 +1,18 @@
 ﻿using System.Collections.ObjectModel;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Firefox;
 
 namespace ParseWbAndOzon.Parsers;
 
 public class OzonParser : Parser<OzonProduct>
 {
-    public OzonParser(WebDriver driver, string productName) : base(driver, productName) { }
+    private string _handleLink;
+    private FirefoxOptions _options = new FirefoxOptions();
+
+    public OzonParser(WebDriver driver, string productName) : base(driver, productName)
+    {
+        _handleLink = $"https://www.ozon.ru/search?text={productName}";
+    }
 
     public override void Parse()
     {
@@ -13,6 +20,8 @@ public class OzonParser : Parser<OzonProduct>
         {
             NavigateToPage();
             GetAllProductsCard();
+            GetNextPageUrl();
+            NewDriverConnection();
         }
         catch (Exception e)
         {
@@ -26,7 +35,7 @@ public class OzonParser : Parser<OzonProduct>
 
     protected override void NavigateToPage()
     {
-        _driver.Navigate().GoToUrl($"https://www.ozon.ru/search?text={_productName}");
+        _driver.Navigate().GoToUrl(_handleLink);
         _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
     }
 
@@ -60,6 +69,7 @@ public class OzonParser : Parser<OzonProduct>
 
     protected override List<OzonProduct> ProductToModel(ReadOnlyCollection<IWebElement> elements)
     {
+        //Не понимаю, как с перегрузкой реализовать
         throw new NotImplementedException();
     }
 
@@ -101,18 +111,16 @@ public class OzonParser : Parser<OzonProduct>
         return products;    
     }
 
-    // private ReadOnlyCollection<IWebElement> PageToCollection(IWebElement page)
-    // {
-    //     var productCardClass =
-    //         page.FindElement(By.CssSelector("#paginatorContent > div > div > div:nth-child(1)"))
-    //             .GetAttribute("class")
-    //             .Replace(" ", ".");
-    //
-    //     var catalog = page.FindElements(By.CssSelector($"{productCardClass}"));
-    //
-    //     return catalog;
-    // }
-    //
+    private void GetNextPageUrl()
+    {
+        _handleLink = _driver.FindElement(By.CssSelector("a.a2425-a4")).GetAttribute("href");
+    }
+
+    private void NewDriverConnection()
+    {
+        _driver.Quit();
+        _driver = new FirefoxDriver(_options);
+    }
     private string GetPriceAttribute(IWebElement priceCard)
     {
         return priceCard.FindElement(By.CssSelector("#paginatorContent > div > div > div:nth-child(1) > div:nth-child(2)"))
