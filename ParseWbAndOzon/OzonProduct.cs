@@ -9,4 +9,15 @@ public record OzonProduct
     public string? Rating { get; set; }
     public string? AmountRewiew { get; set; }
     public required string Url { get; set; }
+
+    public override string ToString()
+    {
+        return $"{Name};" +
+               $"{Price};" +
+               $"{PriceWithSale};" +
+               $"{SalePercent}" +
+               $"{Rating.Replace('.', ',')};" +
+               $"{AmountRewiew};" +
+               $"=ГИПЕРССЫЛКА(\"{Url}\")";
+    }
 }
