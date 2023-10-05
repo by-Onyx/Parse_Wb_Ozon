@@ -41,7 +41,7 @@
             Margin="120,100,120,0" 
             IsChecked="False"
             VerticalAlignment="Top"
-            IsEnabled="False"/>
+            IsEnabled="True"/>
 
     </Grid>
 </Window>

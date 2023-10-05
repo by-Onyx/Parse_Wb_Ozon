@@ -1,4 +1,6 @@
-﻿namespace ParseWbAndOzon;
+﻿using Microsoft.IdentityModel.Tokens;
+
+namespace ParseWbAndOzon;
 
 public record OzonProduct
 {
@@ -16,7 +18,7 @@ public record OzonProduct
                $"{Price};" +
                $"{PriceWithSale};" +
                $"{SalePercent}" +
-               $"{Rating.Replace('.', ',')};" +
+               $"{(Rating.IsNullOrEmpty() ? "" : Rating.Replace(".", ","))};" +
                $"{AmountRewiew};" +
                $"=ГИПЕРССЫЛКА(\"{Url}\")";
     }

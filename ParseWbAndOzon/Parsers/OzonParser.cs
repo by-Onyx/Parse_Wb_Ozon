@@ -18,10 +18,14 @@ public class OzonParser : Parser<OzonProduct>
     {
         try
         {
-            NavigateToPage();
-            GetAllProductsCard();
-            GetNextPageUrl();
-            NewDriverConnection();
+            while (true)
+            {
+                NavigateToPage();
+                GetAllProductsCard();
+                if (!CheckNextPage()) break;
+                GetNextPageUrl();
+                NewDriverConnection();
+            }
         }
         catch (Exception e)
         {
@@ -43,7 +47,8 @@ public class OzonParser : Parser<OzonProduct>
     {
         try
         {
-            _driver.FindElement(By.CssSelector("a.a2425-a4")).Click();
+            _driver.FindElement(
+                By.XPath("//*[@id=\"layoutPage\"]/div[1]/div[2]/div[2]/div[2]/div[3]/div[2]/div/div/div[2]/a"));
             return true;
         }
         catch
@@ -54,17 +59,14 @@ public class OzonParser : Parser<OzonProduct>
 
     protected override void GetAllProductsCard()
     {
-        do
-        {
-            _driver.Manage().Window.Maximize();
-            ScrollToPageEnd();
-            var page = _driver.FindElement(By.CssSelector("#paginatorContent"));
-            var priceCard = GetPriceAttribute(page);
-            var productCardClass = GetProductCardClass(page);
-            var productCards = GetProductsCards(page, productCardClass);
+        _driver.Manage().Window.Maximize();
+        ScrollToPageEnd();
+        var page = _driver.FindElement(By.CssSelector("#paginatorContent"));
+        var priceCard = GetPriceAttribute(page);
+        var productCardClass = GetProductCardClass(page);
+        var productCards = GetProductsCards(page, productCardClass);
 
-            Products.AddRange(ProductToRecord(productCards, priceCard, productCardClass));
-        } while (CheckNextPage());
+        Products.AddRange(ProductToRecord(productCards, priceCard, productCardClass));
     }
 
     protected override List<OzonProduct> ProductToModel(ReadOnlyCollection<IWebElement> elements)
@@ -73,7 +75,8 @@ public class OzonParser : Parser<OzonProduct>
         throw new NotImplementedException();
     }
 
-    private List<OzonProduct> ProductToRecord(ReadOnlyCollection<IWebElement> elements, string priceAttribute, string productCardClass)
+    private List<OzonProduct> ProductToRecord(ReadOnlyCollection<IWebElement> elements, string priceAttribute,
+        string productCardClass)
     {
         List<OzonProduct> products = new();
 
@@ -84,7 +87,7 @@ public class OzonParser : Parser<OzonProduct>
             string? priceWithSale = null;
             string? salePercent = null;
 
-            var priceInfo = priceCard.Split("\n");
+            var priceInfo = priceCard.Replace("\r", "").Split("\n");
 
             if (priceInfo.Length > 1)
             {
@@ -108,12 +111,14 @@ public class OzonParser : Parser<OzonProduct>
             products.Add(ozon);
         }
 
-        return products;    
+        return products;
     }
 
     private void GetNextPageUrl()
     {
-        _handleLink = _driver.FindElement(By.CssSelector("a.a2425-a4")).GetAttribute("href");
+        _handleLink = _driver
+            .FindElement(By.XPath("//*[@id=\"layoutPage\"]/div[1]/div[2]/div[2]/div[2]/div[3]/div[2]/div/div/div[2]/a"))
+            .GetAttribute("href");
     }
 
     private void NewDriverConnection()
@@ -121,9 +126,11 @@ public class OzonParser : Parser<OzonProduct>
         _driver.Quit();
         _driver = new FirefoxDriver(_options);
     }
+
     private string GetPriceAttribute(IWebElement priceCard)
     {
-        return priceCard.FindElement(By.CssSelector("#paginatorContent > div > div > div:nth-child(1) > div:nth-child(2)"))
+        return priceCard
+            .FindElement(By.CssSelector("#paginatorContent > div > div > div:nth-child(1) > div:nth-child(2)"))
             .GetAttribute("class")
             .Replace(" ", ".");
     }

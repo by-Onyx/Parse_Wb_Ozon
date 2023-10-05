@@ -2,8 +2,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using ParseWbAndOzon;
+using ParseWbAndOzon.Parsers;
 using ParseWbAndOzon.Parsers;
 
 namespace ParseUI
@@ -35,13 +37,17 @@ namespace ParseUI
             }
             if ((bool)ozonCheck.IsChecked)
             {
+                OzonParser ozon = new OzonParser(driver, txtSearch.Text.Replace(" ", "+"));
+                ozon.Parse();
+                TextWorker<OzonProduct> textWorker = new TextWorker<OzonProduct>(ozon.Products, fileDir);
+                textWorker.WriteToFile($"ozon_{txtSearch.Text.Replace(" ", "_")}_{DateTime.Now.ToString("dd-MM-yyyy")}");
             }
         }
 
         private FirefoxDriver InitDriver()
         {
             FirefoxOptions options = new FirefoxOptions();
-            options.AddArgument("--headless");
+            //options.AddArgument("--headless");
             var driver = new FirefoxDriver(options);
 
             return driver;
