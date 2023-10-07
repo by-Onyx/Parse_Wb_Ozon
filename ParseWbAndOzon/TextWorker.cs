@@ -9,15 +9,26 @@ public class TextWorker<T>
 { 
     private IReadOnlyCollection<T> products;
     private readonly string _fileDir;
-    
-    private List<string> elements = new()
-    {
-        "Имя;Бренд;Цена без скидки;Цена со скидкой;Рейтинг;Количество отзывов;Ссылка"
-    };
+
+    private List<string> elements;
 
     public TextWorker(IReadOnlyCollection<T> products, string fileDir)
     {
         this.products = products;
+        if (typeof(T) == typeof(OzonProduct))
+        {
+            elements = new List<string>()
+            {
+                "Название;Цена;Цена со скидкой;Размер скидки;Ссылка"
+            };
+        }
+        else if (typeof(T) == typeof(WbProduct))
+        {
+            elements = new List<string>()
+            {
+                "Название;Бренд;Цена;Цена со скидкой;Рейтинг;Количество отзывов;Ссылка"
+            };
+        }
 
         AddToList();
         _fileDir = fileDir;
