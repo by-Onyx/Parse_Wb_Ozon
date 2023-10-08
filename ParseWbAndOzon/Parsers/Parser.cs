@@ -2,23 +2,34 @@
 using System.Globalization;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Support.UI;
 
 namespace ParseWbAndOzon.Parsers;
 
-public abstract class Parser<T>
+public abstract class Parser
 {
-    public List<T> Products { get; private set; }
+    public List<ProductModel> Products { get; private set; }
          
-    protected WebDriver _driver;
-    protected readonly string _productName;
+    protected FirefoxDriver driver;
+    protected string handleLink;
     
-    private const double scrollSpeed = 0.1;
+    protected readonly string _productName;
+    protected readonly FirefoxOptions _options;
+    private const double _scrollSpeed = 0.1;
 
-    public Parser(WebDriver driver, string productName)
+    public Parser(FirefoxDriver driver, string productName)
     {
-        this._driver = driver;
-        this._productName = productName;
-        this.Products = new();
+        this.driver = driver;
+        _productName = productName;
+        Products = new List<ProductModel>();
+    }
+    
+    public Parser(FirefoxDriver driver, FirefoxOptions options, string productName)
+    {
+        this.driver = driver;
+        _options = options;
+        _productName = productName;
+        Products = new List<ProductModel>();
     }
 
     public abstract void Parse();
@@ -26,15 +37,15 @@ public abstract class Parser<T>
     protected abstract bool CheckNextPage();
     protected abstract void NavigateToPage();
     protected abstract void GetAllProductsCard();
-    protected abstract List<T> ProductToModel(ReadOnlyCollection<IWebElement> elements);
+    protected abstract List<ProductModel> ProductToModel(ReadOnlyCollection<IWebElement> elements);
     
-    protected void ScrollToPageEnd()
+    protected  void ScrollToPageEnd(int pageSize)
     {
         double currentPosition = 0;
-        while (200 >= currentPosition)
+        while (pageSize >= currentPosition)
         {
-            currentPosition += scrollSpeed;
-            _driver.ExecuteScript($"window.scrollBy(0,{currentPosition.ToString(CultureInfo.InvariantCulture)})");
+            currentPosition += _scrollSpeed;
+            driver.ExecuteScript($"window.scrollBy(0,{currentPosition.ToString(CultureInfo.InvariantCulture)})");
         }
     }
 }

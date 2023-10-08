@@ -22,7 +22,7 @@ public class TextWorker<T>
                 "Название;Цена;Цена со скидкой;Размер скидки;Ссылка"
             };
         }
-        else if (typeof(T) == typeof(WbProduct))
+        else if (typeof(T) == typeof(ProductModel))
         {
             elements = new List<string>()
             {

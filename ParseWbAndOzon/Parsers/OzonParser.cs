@@ -1,31 +1,25 @@
 ﻿using System.Collections.ObjectModel;
+using System.Globalization;
+using Microsoft.IdentityModel.Tokens;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Support.UI;
 
 namespace ParseWbAndOzon.Parsers;
 
-public class OzonParser : Parser<OzonProduct>
+public class OzonParser : Parser
 {
-    private string _handleLink;
-    private FirefoxOptions _options = new FirefoxOptions();
-
-    public OzonParser(WebDriver driver, string productName) : base(driver, productName)
+    private string productPricesCard;
+    public OzonParser(FirefoxDriver driver, FirefoxOptions options, string productName) : base(driver, options, productName)
     {
-        _handleLink = $"https://www.ozon.ru/search?text={productName}";
+        handleLink = $"https://www.ozon.ru/search/?deny_category_prediction=true&from_global=true&text={productName}";
     }
-
+    
     public override void Parse()
     {
         try
         {
-            while (true)
-            {
-                NavigateToPage();
-                GetAllProductsCard();
-                if (!CheckNextPage()) break;
-                GetNextPageUrl();
-                NewDriverConnection();
-            }
+            GetAllProductsCard();
         }
         catch (Exception e)
         {
@@ -33,22 +27,25 @@ public class OzonParser : Parser<OzonProduct>
         }
         finally
         {
-            _driver.Quit();
+            driver.Quit();
         }
     }
 
     protected override void NavigateToPage()
     {
-        _driver.Navigate().GoToUrl(_handleLink);
-        _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+        driver.Quit();
+        driver = new FirefoxDriver(_options);
+        // TODO https://www.ozon.ru/search/?deny_category_prediction=true&from_global=true&page=6&text=msi+mpg
+        // TODO получить количество товаров
+        driver.Navigate().GoToUrl(handleLink);
+        driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
     }
-
+    
     protected override bool CheckNextPage()
     {
         try
         {
-            _driver.FindElement(
-                By.XPath("//*[@id=\"layoutPage\"]/div[1]/div[2]/div[2]/div[2]/div[3]/div[2]/div/div/div[2]/a"));
+            driver.FindElement(By.LinkText("Дальше"));
             return true;
         }
         catch
@@ -59,100 +56,119 @@ public class OzonParser : Parser<OzonProduct>
 
     protected override void GetAllProductsCard()
     {
-        _driver.Manage().Window.Maximize();
-        ScrollToPageEnd();
-        var page = _driver.FindElement(By.CssSelector("#paginatorContent"));
-        var priceCard = GetPriceAttribute(page);
-        var productCardClass = GetProductCardClass(page);
-        var productCards = GetProductsCards(page, productCardClass);
-
-        Products.AddRange(ProductToRecord(productCards, priceCard, productCardClass));
+        do
+        {
+            NavigateToPage();
+            
+            var catalog = driver.FindElement(By.CssSelector("#paginatorContent"));
+            if(!CheckBrandTag(catalog)) continue;
+            
+            ScrollToPageEnd(50);
+            
+            var productCardAttribute =
+                catalog.FindElement(By.XPath("//*[@id=\"paginatorContent\"]/div/div/div[1]/div[1]"))
+                    .GetAttribute("class")
+                    .Replace(" ", ".");
+            
+            productPricesCard =
+                catalog.FindElement(By.CssSelector($"#paginatorContent > div > div > div:nth-child(1) > div.{productCardAttribute} > div:nth-child(1) > div"))
+                    .GetAttribute("class")
+                    .Replace(" ", ".");
+            
+            Products.AddRange(ProductToModel(catalog.FindElements(By.CssSelector($".{productCardAttribute}"))));
+            SetNextPageLink();
+            
+            GC.Collect();
+        } while (CheckNextPage());
     }
-
-    protected override List<OzonProduct> ProductToModel(ReadOnlyCollection<IWebElement> elements)
+    
+    protected override List<ProductModel> ProductToModel(ReadOnlyCollection<IWebElement> elements)
     {
-        //Не понимаю, как с перегрузкой реализовать
-        throw new NotImplementedException();
-    }
-
-    private List<OzonProduct> ProductToRecord(ReadOnlyCollection<IWebElement> elements, string priceAttribute,
-        string productCardClass)
-    {
-        List<OzonProduct> products = new();
-
+        List<ProductModel> products = new();
+        string price;
+        string? priceWithSale = null;
         foreach (var element in elements)
         {
-            var priceCard = FindPriceCard(element, priceAttribute, productCardClass);
-            string price;
-            string? priceWithSale = null;
-            string? salePercent = null;
-
-            var priceInfo = priceCard.Replace("\r", "").Split("\n");
-
+            var priceCard = element
+                .FindElement(By.ClassName(productPricesCard)).Text;
+            
+            var priceInfo = priceCard.Split("\r\n");
+            
             if (priceInfo.Length > 1)
             {
                 priceWithSale = priceInfo[0];
                 price = priceInfo[1];
-                salePercent = priceInfo[2];
             }
             else
             {
                 price = priceInfo[0];
             }
 
-            var ozon = new OzonProduct
+            string? brand;
+            try
             {
-                Name = element.FindElement(By.ClassName("tsBody500Medium")).Text,
-                Price = price,
+                brand = element.FindElement(By.ClassName("tsBody400Small")).Text;
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(1);
+            }
+            catch
+            {
+                brand = null;
+            }
+
+            string? rating; 
+            string? amountRewiew;
+            
+            try
+            {
+                var rewiews = element.FindElements(By.ClassName("v1"));
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(1);
+                rating = rewiews[0].Text.Trim();
+                amountRewiew = rewiews[1].Text;
+            }
+            catch
+            {
+                rating = null;
+                amountRewiew = null;
+            }
+            
+            var product = new ProductModel
+            {
                 PriceWithSale = priceWithSale,
-                SalePercent = salePercent,
+                Price = price,
+                Brand = brand,
+                Name = element.FindElement(By.ClassName("tsBody500Medium")).Text,
+                Rating = rating,
+                AmountRewiew = amountRewiew,
                 Url = element.FindElement(By.TagName("a")).GetAttribute("href")
             };
-            products.Add(ozon);
+            products.Add(product);
+            //Console.WriteLine(product);
         }
 
         return products;
     }
 
-    private void GetNextPageUrl()
+    private void SetNextPageLink()
     {
-        _handleLink = _driver
+         handleLink = driver
             .FindElement(By.XPath("//*[@id=\"layoutPage\"]/div[1]/div[2]/div[2]/div[2]/div[3]/div[2]/div/div/div[2]/a"))
             .GetAttribute("href");
     }
 
-    private void NewDriverConnection()
+    private bool CheckBrandTag(IWebElement catalog)
     {
-        _driver.Quit();
-        _driver = new FirefoxDriver(_options);
-    }
-
-    private string GetPriceAttribute(IWebElement priceCard)
-    {
-        return priceCard
-            .FindElement(By.CssSelector("#paginatorContent > div > div > div:nth-child(1) > div:nth-child(2)"))
-            .GetAttribute("class")
-            .Replace(" ", ".");
-    }
-
-    private string GetProductCardClass(IWebElement page)
-    {
-        return page.FindElement(By.CssSelector("#paginatorContent > div > div > div:nth-child(1)"))
-            .GetAttribute("class")
-            .Replace(" ", ".");
-    }
-
-    private ReadOnlyCollection<IWebElement> GetProductsCards(IWebElement page, string productCardClass)
-    {
-        return page
-            .FindElements(By.CssSelector($".{productCardClass}"));
-    }
-
-    private string FindPriceCard(IWebElement card, string priceAttribute, string productCardClass)
-    {
-        return card
-            .FindElement(By.CssSelector(
-                $"#paginatorContent > div > div > div.{productCardClass} > div.{priceAttribute} > div:nth-child(1)"))
-            .Text;
+        try
+        {
+            string brand = catalog
+                .FindElement(By.ClassName("tsBody400Small"))
+                .Text;
+            Console.WriteLine(brand);
+            if (brand == "Стало дешевле") return false;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

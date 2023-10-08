@@ -2,14 +2,14 @@
 
 namespace ParseWbAndOzon;
 
-public record WbProduct
+public record ProductModel
 {
     public required string Name { get; set; }
-    public required string Brand { get; set; }
+    public string? Brand { get; set; }
     public required string Price { get; set; }
     public string? PriceWithSale { get; set; }
-    public required string Rating { get; set; }
-    public required string AmountRewiew { get; set; }
+    public string? Rating { get; set; }
+    public string? AmountRewiew { get; set; }
     public required string Url { get; set; }
 
     public override string ToString()
@@ -18,7 +18,7 @@ public record WbProduct
                $"{Brand};" +
                $"{Price};" +
                $"{PriceWithSale};" +
-               $"{Rating.Replace('.', ',')};" +
+               $"{Rating?.Replace('.', ',')};" +
                $"{AmountRewiew};" +
                $"=ГИПЕРССЫЛКА(\"{Url}\")";
     }

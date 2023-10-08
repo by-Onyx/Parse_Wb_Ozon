@@ -1,6 +1,7 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Interactions;
+using ParseWbAndOzon.Parsers;
 
 namespace ParseWbAndOzon;
 
@@ -10,6 +11,11 @@ class Program
     {
         FirefoxOptions options = new FirefoxOptions();
         var driver = new FirefoxDriver(options);
+        /*WbParser wbParser = new WbParser(driver, "MSI");
+        wbParser.Parse();*/
+        OzonParser ozonParser = new OzonParser(driver, options, "msi+mpg");
+        ozonParser.Parse();
+        /*
         IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
         var handleLink = "https://www.ozon.ru/search?text=MSI+MPG";
         try
@@ -92,7 +98,6 @@ class Program
         finally
         {
             driver.Quit();
-        }
+        }*/
     }
-
 }

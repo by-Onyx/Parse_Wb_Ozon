@@ -1,11 +1,16 @@
 ﻿using System.Collections.ObjectModel;
+using System.Globalization;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Firefox;
 
 namespace ParseWbAndOzon.Parsers;
 
-public class WbParser : Parser<WbProduct>
+public class WbParser : Parser
 {
-    public WbParser(WebDriver driver, string productName) : base(driver, productName) { }
+    public WbParser(FirefoxDriver driver, string productName) : base(driver, productName)
+    {
+        handleLink = $"https://www.wildberries.ru/catalog/0/search.aspx?search={_productName}";
+    }
     
     public override void Parse()
     {
@@ -20,21 +25,21 @@ public class WbParser : Parser<WbProduct>
         }
         finally
         {
-            _driver.Quit();
+            driver.Quit();
         }
     }
     
     protected override void NavigateToPage()
     {
-        _driver.Navigate().GoToUrl($"https://www.wildberries.ru/catalog/0/search.aspx?search={_productName}");
-        _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+        driver.Navigate().GoToUrl(handleLink);
+        driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
     }
     
     protected override bool CheckNextPage()
     {
         try
         {
-            _driver.FindElement(By.LinkText("Следующая страница")).Click();
+            driver.FindElement(By.LinkText("Следующая страница")).Click();
             return true;
         }
         catch
@@ -47,21 +52,24 @@ public class WbParser : Parser<WbProduct>
     {
         do
         {
-            _driver.Manage().Window.Maximize();
-            ScrollToPageEnd();
-            var catalog = _driver.FindElement(By.CssSelector("#catalog > div > div.catalog-page__main.new-size"));
+            ScrollToPageEnd(100);
+            
+            var catalog = driver
+                .FindElement(By.CssSelector("#catalog > div > div.catalog-page__main.new-size"));
+            
             Products.AddRange(ProductToModel(catalog.FindElements(By.TagName("article"))));
+            
+            GC.Collect();
         } while (CheckNextPage());
     }
-
-    protected override List<WbProduct> ProductToModel(ReadOnlyCollection<IWebElement> elements)
+    
+    protected override List<ProductModel> ProductToModel(ReadOnlyCollection<IWebElement> elements)
     {
-        Console.WriteLine(elements.Count);
-        List<WbProduct> products = new();
+        List<ProductModel> products = new();
         foreach (var element in elements)
         {
             var id = element.GetAttribute("id");
-            var product = new WbProduct
+            var product = new ProductModel
             {
                 PriceWithSale = element
                     .FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > p > span > ins")).Text,

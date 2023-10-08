@@ -34,12 +34,12 @@
         <CheckBox x:Name="wildberriesCheck"
             Content="Wildberries" 
             Margin="120,80,120,0" 
-            IsChecked="False"
+            IsChecked="True"
             VerticalAlignment="Top"/>
         <CheckBox x:Name="ozonCheck"
             Content="Ozon" 
             Margin="120,100,120,0" 
-            IsChecked="False"
+            IsChecked="True"
             VerticalAlignment="Top"
             IsEnabled="True"/>
 
