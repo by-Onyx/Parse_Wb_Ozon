@@ -27,30 +27,26 @@ namespace ParseUI
         private void submitBtn_Click(object sender, RoutedEventArgs e)
         {
             ShowFolderDialog();
-            var driver = InitDriver();
+            FirefoxOptions options = new FirefoxOptions();
+            options.AddArgument("--headless");
+            var driver = new FirefoxDriver(options);
+
             if ((bool)wildberriesCheck.IsChecked)
             {
                 WbParser wb = new WbParser(driver, txtSearch.Text.Replace(" ", "+"));
                 wb.Parse();
-                TextWorker<ProductModel> textWorker = new TextWorker<ProductModel>(wb.Products, fileDir);
-                textWorker.WriteToFile($"wb_{txtSearch.Text.Replace(" ", "_")}_{DateTime.Now.ToString("dd-MM-yyyy")}");
+                TextWorker textWorker = new TextWorker(wb.Products, fileDir);
+                textWorker.WriteToExcelFile($"wb_{txtSearch.Text.Replace(" ", "_")}_" +
+                                            $"{DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss")}");
             }
             if ((bool)ozonCheck.IsChecked)
             {
-                OzonParser ozon = new OzonParser(driver, txtSearch.Text.Replace(" ", "+"));
+                OzonParser ozon = new OzonParser(driver, options,txtSearch.Text.Replace(" ", "+"));
                 ozon.Parse();
-                TextWorker<OzonProduct> textWorker = new TextWorker<OzonProduct>(ozon.Products, fileDir);
-                textWorker.WriteToFile($"ozon_{txtSearch.Text.Replace(" ", "_")}_{DateTime.Now.ToString("dd-MM-yyyy")}");
+                TextWorker textWorker = new TextWorker(ozon.Products, fileDir);
+                textWorker.WriteToExcelFile($"ozon_{txtSearch.Text.Replace(" ", "_")}_" +
+                                       $"{DateTime.Now.ToString("dd-MM-yyyy_HH-mm-ss")}");
             }
-        }
-
-        private FirefoxDriver InitDriver()
-        {
-            FirefoxOptions options = new FirefoxOptions();
-            //options.AddArgument("--headless");
-            var driver = new FirefoxDriver(options);
-
-            return driver;
         }
 
         private void ShowFolderDialog()

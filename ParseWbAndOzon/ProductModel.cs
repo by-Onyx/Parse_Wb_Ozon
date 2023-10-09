@@ -20,6 +20,6 @@ public record ProductModel
                $"{PriceWithSale};" +
                $"{Rating?.Replace('.', ',')};" +
                $"{AmountRewiew};" +
-               $"=ГИПЕРССЫЛКА(\"{Url}\")";
+               $"HYPERLINK(\"{Url}\")";
     }
 }

@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.IdentityModel.Tokens;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 
 namespace ParseWbAndOzon.Parsers;
@@ -10,9 +11,14 @@ namespace ParseWbAndOzon.Parsers;
 public class OzonParser : Parser
 {
     private string productPricesCard;
+    private int currentPageNumber;
+    private Func<string> GetHandleLink;
     public OzonParser(FirefoxDriver driver, FirefoxOptions options, string productName) : base(driver, options, productName)
     {
-        handleLink = $"https://www.ozon.ru/search/?deny_category_prediction=true&from_global=true&text={productName}";
+        currentPageNumber = 1;
+        GetHandleLink = () => 
+            handleLink = 
+                $"https://www.ozon.ru/search/?deny_category_prediction=true&from_global=true&page={currentPageNumber}&sorting=price_desc&text={productName}";
     }
     
     public override void Parse()
@@ -35,9 +41,7 @@ public class OzonParser : Parser
     {
         driver.Quit();
         driver = new FirefoxDriver(_options);
-        // TODO https://www.ozon.ru/search/?deny_category_prediction=true&from_global=true&page=6&text=msi+mpg
-        // TODO получить количество товаров
-        driver.Navigate().GoToUrl(handleLink);
+        driver.Navigate().GoToUrl(GetHandleLink());
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
     }
     
@@ -61,7 +65,14 @@ public class OzonParser : Parser
             NavigateToPage();
             
             var catalog = driver.FindElement(By.CssSelector("#paginatorContent"));
-            if(!CheckBrandTag(catalog)) continue;
+            if (!CheckBrandTag(catalog))
+            {
+                Console.WriteLine("yap");
+                Actions actions = new Actions(driver);
+                actions.KeyDown(Keys.Control).SendKeys("r").KeyUp(Keys.Control).Perform();
+            }
+            
+            currentPageNumber++;
             
             ScrollToPageEnd(50);
             
@@ -76,8 +87,7 @@ public class OzonParser : Parser
                     .Replace(" ", ".");
             
             Products.AddRange(ProductToModel(catalog.FindElements(By.CssSelector($".{productCardAttribute}"))));
-            SetNextPageLink();
-            
+
             GC.Collect();
         } while (CheckNextPage());
     }
@@ -142,17 +152,9 @@ public class OzonParser : Parser
                 Url = element.FindElement(By.TagName("a")).GetAttribute("href")
             };
             products.Add(product);
-            //Console.WriteLine(product);
         }
 
         return products;
-    }
-
-    private void SetNextPageLink()
-    {
-         handleLink = driver
-            .FindElement(By.XPath("//*[@id=\"layoutPage\"]/div[1]/div[2]/div[2]/div[2]/div[3]/div[2]/div/div/div[2]/a"))
-            .GetAttribute("href");
     }
 
     private bool CheckBrandTag(IWebElement catalog)
@@ -162,7 +164,6 @@ public class OzonParser : Parser
             string brand = catalog
                 .FindElement(By.ClassName("tsBody400Small"))
                 .Text;
-            Console.WriteLine(brand);
             if (brand == "Стало дешевле") return false;
             return true;
         }

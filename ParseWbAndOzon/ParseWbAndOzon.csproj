@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="EPPlus" Version="6.2.10" />
       <PackageReference Include="Selenium.WebDriver" Version="4.12.4" />
       <PackageReference Include="System.Windows.Extensions" Version="8.0.0-rc.1.23419.4" />
     </ItemGroup>
