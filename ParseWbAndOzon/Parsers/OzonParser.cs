@@ -39,8 +39,8 @@ public class OzonParser : Parser
 
     protected override void NavigateToPage()
     {
-        driver.Quit();
-        driver = new FirefoxDriver(_options);
+        driver.Manage().Cookies.DeleteAllCookies();
+        //driver = new FirefoxDriver(_options);
         driver.Navigate().GoToUrl(GetHandleLink());
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
     }
@@ -67,9 +67,8 @@ public class OzonParser : Parser
             var catalog = driver.FindElement(By.CssSelector("#paginatorContent"));
             if (!CheckBrandTag(catalog))
             {
-                Console.WriteLine("yap");
-                Actions actions = new Actions(driver);
-                actions.KeyDown(Keys.Control).SendKeys("r").KeyUp(Keys.Control).Perform();
+                Console.WriteLine("fuck");
+                continue;
             }
             
             currentPageNumber++;
@@ -164,6 +163,8 @@ public class OzonParser : Parser
             string brand = catalog
                 .FindElement(By.ClassName("tsBody400Small"))
                 .Text;
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(1);
+            Console.WriteLine(brand);
             if (brand == "Стало дешевле") return false;
             return true;
         }

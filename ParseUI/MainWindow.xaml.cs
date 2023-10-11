@@ -28,7 +28,7 @@ namespace ParseUI
         {
             ShowFolderDialog();
             FirefoxOptions options = new FirefoxOptions();
-            options.AddArgument("--headless");
+            //options.AddArgument("--headless");
             var driver = new FirefoxDriver(options);
 
             if ((bool)wildberriesCheck.IsChecked)
