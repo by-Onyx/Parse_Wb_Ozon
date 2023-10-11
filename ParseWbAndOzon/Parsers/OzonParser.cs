@@ -10,14 +10,15 @@ namespace ParseWbAndOzon.Parsers;
 
 public class OzonParser : Parser
 {
+    private int i = 0;
     private string productPricesCard;
     private int currentPageNumber;
     private Func<string> GetHandleLink;
     public OzonParser(FirefoxDriver driver, FirefoxOptions options, string productName) : base(driver, options, productName)
     {
         currentPageNumber = 1;
-        GetHandleLink = () => 
-            handleLink = 
+        GetHandleLink = () =>
+            handleLink =
                 $"https://www.ozon.ru/search/?deny_category_prediction=true&from_global=true&page={currentPageNumber}&sorting=price_desc&text={productName}";
     }
     
@@ -39,8 +40,22 @@ public class OzonParser : Parser
 
     protected override void NavigateToPage()
     {
+        if (i == 0)
+        {
+            driver.Manage().Cookies.DeleteAllCookies();
+            driver.Navigate().GoToUrl(GetHandleLink());
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+            var button = driver.FindElement(By.CssSelector(".uy8 > button:nth-child(1)"));
+            driver.Manage().Cookies.DeleteAllCookies();
+            button.Click();
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+            string newLink = driver.Url.Replace("from_global=true", $"from_global=true&page={currentPageNumber}"); //TODO Засунуть newLink в Func GetHandleLink()
+            i++;
+            
+            return;
+        }
+        
         driver.Manage().Cookies.DeleteAllCookies();
-        //driver = new FirefoxDriver(_options);
         driver.Navigate().GoToUrl(GetHandleLink());
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
     }
@@ -75,17 +90,17 @@ public class OzonParser : Parser
             
             ScrollToPageEnd(50);
             
-            var productCardAttribute =
-                catalog.FindElement(By.XPath("//*[@id=\"paginatorContent\"]/div/div/div[1]/div[1]"))
-                    .GetAttribute("class")
-                    .Replace(" ", ".");
-            
-            productPricesCard =
-                catalog.FindElement(By.CssSelector($"#paginatorContent > div > div > div:nth-child(1) > div.{productCardAttribute} > div:nth-child(1) > div"))
-                    .GetAttribute("class")
-                    .Replace(" ", ".");
-            
-            Products.AddRange(ProductToModel(catalog.FindElements(By.CssSelector($".{productCardAttribute}"))));
+            // var productCardAttribute =
+            //     catalog.FindElement(By.XPath("//*[@id=\"paginatorContent\"]/div/div/div[1]/div[1]"))
+            //         .GetAttribute("class")
+            //         .Replace(" ", ".");
+            //
+            // /*productPricesCard =
+            //     catalog.FindElement(By.CssSelector($"#paginatorContent > div > div > div:nth-child(1) > div.{productCardAttribute} > div:nth-child(1) > div"))
+            //         .GetAttribute("class")
+            //         .Replace(" ", ".");*/
+            //
+            // Products.AddRange(ProductToModel(catalog.FindElements(By.CssSelector($".{productCardAttribute}"))));
 
             GC.Collect();
         } while (CheckNextPage());
