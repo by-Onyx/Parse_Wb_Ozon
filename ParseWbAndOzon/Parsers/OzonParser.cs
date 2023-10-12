@@ -11,25 +11,24 @@ namespace ParseWbAndOzon.Parsers;
 
 public class OzonParser : Parser
 {
-    private int i = 0;
     private string productPricesCard;
     private int currentPageNumber;
     private Func<string> GetHandleLink;
-    private string _normalLink;
-    private int _pageNumberIndex;
-    private bool _pastFirstPage = false; //На случай, если на первой странице вылетела капча
+    private string brand;
     public OzonParser(FirefoxDriver driver, FirefoxOptions options, string productName) : base(driver, options, productName)
     {
         currentPageNumber = 1;
-        GetHandleLink = () =>
-            handleLink =
-                $"https://www.ozon.ru/search/?deny_category_prediction=true&from_global=true&page={currentPageNumber}&sorting=price_desc&text={productName}";
+        brand = productName.Split('+')[0];
     }
     
     public override void Parse()
     {
         try
         {
+            var brandId = GetBrandId(); 
+            GetHandleLink = () =>
+                handleLink =
+                    $"https://www.ozon.ru/search/?brand={brandId}&deny_category_prediction=true&from_global=true&page={currentPageNumber}&sorting=price_desc&text={_productName}";
             GetAllProductsCard();
         }
         catch (Exception e)
@@ -44,38 +43,20 @@ public class OzonParser : Parser
 
     protected override void NavigateToPage()
     {
-        if (i == 0)
-        {
-            driver.Manage().Cookies.DeleteAllCookies();
-            driver.Navigate().GoToUrl(GetHandleLink());
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            var button = driver.FindElement(By.CssSelector(".uy8 > button:nth-child(1)"));
-            driver.Manage().Cookies.DeleteAllCookies();
-            button.Click();
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            if (handleLink.Contains("from_global"))
-            {
-                _normalLink = driver.Url.Replace("from_global=true", $"from_global=true&page={currentPageNumber}"); //TODO Засунуть newLink в Func GetHandleLink()
-            }
-            else
-            {
-                _normalLink = driver.Url.Replace("deny_category_prediction=true", $"deny_category_prediction=true&page={currentPageNumber}");
-            }
-            _pageNumberIndex = _normalLink.IndexOf('1', 50);
-            i++;
-            
-            return;
-        }
-
-        _pastFirstPage = true;
-
-        StringBuilder sb = new StringBuilder();
-        sb.Append(_normalLink);
-        sb.Remove(_pageNumberIndex, 1);
-        sb.Insert(_pageNumberIndex, $"{currentPageNumber}");
         driver.Manage().Cookies.DeleteAllCookies();
-        driver.Navigate().GoToUrl(sb.ToString());
+        driver.Navigate().GoToUrl(GetHandleLink());
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+    }
+
+    private string GetBrandId()
+    {
+        driver.Manage().Cookies.DeleteAllCookies();
+        driver.Navigate().GoToUrl($"https://www.ozon.ru/brand/en--{brand[0]}/");
+        return driver
+            .FindElement(By.LinkText(brand))
+            .GetAttribute("href")
+            .Split('-')[1]
+            .Replace("/","");
     }
     
     protected override bool CheckNextPage()
@@ -97,24 +78,19 @@ public class OzonParser : Parser
         {
             NavigateToPage();
 
+            IWebElement? catalog; 
             try
             {
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-                var catalogCheck = driver.FindElement(By.CssSelector("#paginatorContent"));
+                catalog = driver.FindElement(By.CssSelector("#paginatorContent"));
             }
             catch(Exception e)
             {
-                NewDriverConnection();
-            }
-            
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            var catalog = driver.FindElement(By.CssSelector("#paginatorContent"));
-            if (!CheckBrandTag(catalog))
-            {
-                Console.WriteLine("fuck");
-                currentPageNumber++;
+                driver.Quit();
+                driver = new FirefoxDriver(_options);
                 continue;
             }
+            
+            catalog = driver.FindElement(By.CssSelector("#paginatorContent"));
             
             currentPageNumber++;
             
@@ -125,27 +101,15 @@ public class OzonParser : Parser
                     .GetAttribute("class")
                     .Replace(" ", ".");
             
-            /*productPricesCard =
+            productPricesCard =
                 catalog.FindElement(By.CssSelector($"#paginatorContent > div > div > div:nth-child(1) > div.{productCardAttribute} > div:nth-child(1) > div"))
                     .GetAttribute("class")
-                    .Replace(" ", ".");*/
+                    .Replace(" ", ".");
             
-            //Products.AddRange(ProductToModel(catalog.FindElements(By.CssSelector($".{productCardAttribute}"))));
+            Products.AddRange(ProductToModel(catalog.FindElements(By.CssSelector($".{productCardAttribute}"))));
 
             GC.Collect();
         } while (CheckNextPage());
-    }
-
-    private void NewDriverConnection()
-    {
-        driver.Quit();
-        driver = new FirefoxDriver(_options);
-        driver.Manage().Cookies.DeleteAllCookies();
-        if (!_pastFirstPage)
-        {
-            i = 0;
-        }
-        NavigateToPage();
     }
     
     protected override List<ProductModel> ProductToModel(ReadOnlyCollection<IWebElement> elements)
@@ -168,17 +132,6 @@ public class OzonParser : Parser
             else
             {
                 price = priceInfo[0];
-            }
-
-            string? brand;
-            try
-            {
-                brand = element.FindElement(By.ClassName("tsBody400Small")).Text;
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(1);
-            }
-            catch
-            {
-                brand = null;
             }
 
             string? rating; 
@@ -211,23 +164,5 @@ public class OzonParser : Parser
         }
 
         return products;
-    }
-
-    private bool CheckBrandTag(IWebElement catalog)
-    {
-        try
-        {
-            string brand = catalog
-                .FindElement(By.ClassName("tsBody400Small"))
-                .Text;
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromMilliseconds(1);
-            Console.WriteLine(brand);
-            if (brand == "Стало дешевле") return false;
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
     }
 }
