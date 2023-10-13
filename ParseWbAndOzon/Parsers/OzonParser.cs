@@ -12,14 +12,7 @@ namespace ParseWbAndOzon.Parsers;
 public class OzonParser : Parser
 {
     private string productPricesCard;
-    private int currentPageNumber;
-    private Func<string> GetHandleLink;
-    private string brand;
-    public OzonParser(FirefoxDriver driver, FirefoxOptions options, string productName) : base(driver, options, productName)
-    {
-        currentPageNumber = 1;
-        brand = productName.Split('+')[0];
-    }
+    public OzonParser(FirefoxDriver driver, FirefoxOptions options, string productName) : base(driver, options, productName) { }
     
     public override void Parse()
     {
@@ -48,12 +41,12 @@ public class OzonParser : Parser
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
     }
 
-    private string GetBrandId()
+    protected override string GetBrandId()
     {
         driver.Manage().Cookies.DeleteAllCookies();
-        driver.Navigate().GoToUrl($"https://www.ozon.ru/brand/en--{brand[0]}/");
+        driver.Navigate().GoToUrl($"https://www.ozon.ru/brand/en--{_brand[0]}/");
         return driver
-            .FindElement(By.LinkText(brand))
+            .FindElement(By.LinkText(_brand))
             .GetAttribute("href")
             .Split('-')[1]
             .Replace("/","");
@@ -89,8 +82,6 @@ public class OzonParser : Parser
                 driver = new FirefoxDriver(_options);
                 continue;
             }
-            
-            catalog = driver.FindElement(By.CssSelector("#paginatorContent"));
             
             currentPageNumber++;
             
@@ -154,7 +145,7 @@ public class OzonParser : Parser
             {
                 PriceWithSale = priceWithSale,
                 Price = price,
-                Brand = brand,
+                Brand = _brand,
                 Name = element.FindElement(By.ClassName("tsBody500Medium")).Text,
                 Rating = rating,
                 AmountRewiew = amountRewiew,

@@ -7,16 +7,17 @@ namespace ParseWbAndOzon.Parsers;
 
 public class WbParser : Parser
 {
-    public WbParser(FirefoxDriver driver, string productName) : base(driver, productName)
-    {
-        handleLink = $"https://www.wildberries.ru/catalog/0/search.aspx?search={_productName}";
-    }
+    public WbParser(FirefoxDriver driver, FirefoxOptions options, string productName) : base(driver, options, productName) { }
     
     public override void Parse()
     {
         try
         {
-            NavigateToPage();
+            var brandId = GetBrandId();
+            GetHandleLink = () =>
+                handleLink =
+                    $"https://www.wildberries.ru/catalog/0/search.aspx?page={currentPageNumber}&sort=pricedown&search={_productName}&fbrand={brandId}";
+
             GetAllProductsCard();
         }
         catch (Exception e)
@@ -31,15 +32,30 @@ public class WbParser : Parser
     
     protected override void NavigateToPage()
     {
-        driver.Navigate().GoToUrl(handleLink);
+        driver.Manage().Cookies.DeleteAllCookies();
+        driver.Navigate().GoToUrl(GetHandleLink());
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+    }
+    
+    protected override string GetBrandId()
+    {
+        driver.Manage().Cookies.DeleteAllCookies();
+        driver.Navigate().GoToUrl($"https://www.wildberries.by/catalog?search={_brand}&tail-location=SNT");
+        driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+        driver.FindElement(By.ClassName("card-cell")).Click();
+        driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+        return driver.FindElement(By.ClassName("product-header__title"))
+            .FindElement(By.TagName("a"))
+            .GetAttribute("href")
+            .Split("brandpage=")[1]
+            .Split("__")[0];
     }
     
     protected override bool CheckNextPage()
     {
         try
         {
-            driver.FindElement(By.LinkText("Следующая страница")).Click();
+            driver.FindElement(By.LinkText("Следующая страница"));
             return true;
         }
         catch
@@ -52,10 +68,20 @@ public class WbParser : Parser
     {
         do
         {
+            NavigateToPage();
+            IWebElement? catalog; 
+            try
+            {
+                catalog = driver.FindElement(By.CssSelector("#catalog > div > div.catalog-page__main.new-size"));
+            }
+            catch(Exception e)
+            {
+                driver.Quit();
+                driver = new FirefoxDriver(_options);
+                continue;
+            }
+            currentPageNumber++;
             ScrollToPageEnd(100);
-            
-            var catalog = driver
-                .FindElement(By.CssSelector("#catalog > div > div.catalog-page__main.new-size"));
             
             Products.AddRange(ProductToModel(catalog.FindElements(By.TagName("article"))));
             
@@ -69,14 +95,23 @@ public class WbParser : Parser
         foreach (var element in elements)
         {
             var id = element.GetAttribute("id");
+
+            string priceWithSale;
+            try
+            {
+                priceWithSale = element
+                    .FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > p > span > ins")).Text;
+            }
+            catch
+            {
+                priceWithSale = "";
+            }
             var product = new ProductModel
             {
-                PriceWithSale = element
-                    .FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > p > span > ins")).Text,
+                PriceWithSale = priceWithSale,
                 Price = element
                     .FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > p > span > del")).Text,
-                Brand =
-                    element.FindElement(By.CssSelector($"#{id} > div > div.product-card__middle-wrap > h2 > span.product-card__brand")).Text,
+                Brand = _brand,
                 Name =
                     element.FindElement(
                             By.CssSelector(

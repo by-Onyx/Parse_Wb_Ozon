@@ -12,17 +12,14 @@ public abstract class Parser
          
     protected FirefoxDriver driver;
     protected string handleLink;
+    protected int currentPageNumber;
+    protected Func<string> GetHandleLink;
     
     protected readonly string _productName;
+    protected readonly string _brand;
     protected readonly FirefoxOptions _options;
+    
     private const double _scrollSpeed = 0.1;
-
-    public Parser(FirefoxDriver driver, string productName)
-    {
-        this.driver = driver;
-        _productName = productName;
-        Products = new List<ProductModel>();
-    }
     
     public Parser(FirefoxDriver driver, FirefoxOptions options, string productName)
     {
@@ -30,6 +27,8 @@ public abstract class Parser
         _options = options;
         _productName = productName;
         Products = new List<ProductModel>();
+        currentPageNumber = 1;
+        _brand = productName.Split('+')[0];
     }
 
     public abstract void Parse();
@@ -48,4 +47,6 @@ public abstract class Parser
             driver.ExecuteScript($"window.scrollBy(0,{currentPosition.ToString(CultureInfo.InvariantCulture)})");
         }
     }
+
+    protected abstract string GetBrandId();
 }

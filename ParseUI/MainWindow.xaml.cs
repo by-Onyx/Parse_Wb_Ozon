@@ -33,7 +33,7 @@ namespace ParseUI
 
             if ((bool)wildberriesCheck.IsChecked)
             {
-                WbParser wb = new WbParser(driver, txtSearch.Text.Replace(" ", "+"));
+                WbParser wb = new WbParser(driver, options,txtSearch.Text.Replace(" ", "+"));
                 wb.Parse();
                 TextWorker textWorker = new TextWorker(wb.Products, fileDir);
                 textWorker.WriteToExcelFile($"wb_{txtSearch.Text.Replace(" ", "_")}_" +
